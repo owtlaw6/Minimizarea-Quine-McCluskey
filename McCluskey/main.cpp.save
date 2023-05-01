@@ -1,0 +1,922 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+ifstream fin("date.in");
+
+int n, a[32][7], in[32][7], m, grupa[32];
+vector <int> mintermi[70];
+vector <int> mintermic[70];
+vector <int> mintermisol[30];
+int b[70][6], nr_linb = -1;
+int c[70][6], nr_linc = -1;
+int sol[30][5], nr_linsol = -1;
+
+void init4(){
+    /// asociez fiecarul minterm grupa careia ii apartine in cazul unei functii cu 4 variabile intr-un vector
+
+    grupa[0] = 0;
+    grupa[1] = grupa[2] = grupa[4] = grupa [8] = 1;
+    grupa[3] = grupa[5] = grupa[6] = grupa[9] = grupa[10] = grupa[12] = 2;
+    grupa[7] = grupa[11] = grupa[13] = grupa[14] = 3;
+    grupa [15] = 4;
+}
+void init5(){
+    /// asociez fiecarul minterm grupa careia ii apartine in cazul unei functii cu 5 variabile intr-un vector
+
+    grupa[0] = 0;
+    grupa[1] = grupa[2] = grupa[4] = grupa [8] = grupa [16] = 1;
+    grupa[3] = grupa[5] = grupa[6] = grupa[9] = grupa[10] = grupa[12] = grupa[17] = grupa[18] = grupa[20] = grupa[24] = 2;
+    grupa[7] = grupa[11] = grupa[13] = grupa[14] = grupa[19] = grupa[21] = grupa[22] = grupa[25] = grupa[26] = grupa[28] = 3;
+    grupa[15] = grupa[23] = grupa[27] = grupa[29] = grupa[30] = 4;
+    grupa[31] = 5;
+}
+void citire4(){
+    /// citesc tabelul de adevar pentru 4 variabile
+    /// pe pozitia 0 va fi conversia din binar in zecimal si se va retine numarul
+    /// pe pozitiile 1 2 3 4 vor fi valorile celor 4 variabile
+    /// pe pozitia 5 va fi valoarea de adevar a functiei f din tabel
+
+    for (int i = 0; i < 16; ++i){
+        fin >> in[i][1] >> in[i][2] >> in[i][3] >> in[i][4] >> in[i][5];
+        in[i][0] = in[i][1] * 8 + in[i][2] * 4 + in[i][3] * 2 + in[i][4];
+    }
+}
+void citire5(){
+    /// citesc tabelul de adevar pentru 5 variabile
+    /// pe pozitia 0 va fi conversia din binar in zecimal si se va retine numarul
+    /// pe pozitiile 1 2 3 4 5 vor fi valorile celor 5 variabile
+    /// pe pozitia 6 va fi valoarea de adevar a functiei f din tabel
+
+    for (int i = 0; i < 32; ++i){
+        fin >> in[i][1] >> in[i][2] >> in[i][3] >> in[i][4] >> in[i][5] >> in[i][6];
+        in[i][0] = in[i][1] * 16 + in[i][2] * 8 + in[i][3] * 4 + in[i][4] * 2 + in[i][5];
+    }
+}
+void copiere(int new_lin, int index){
+    /// functia este apelata la generarea tabelului pentru minimizare si are rolul de a scrie
+    /// in noul tabel informatiile prelucrate din tabelul anterior, cel citit initial
+
+    for(int i = 0; i < 7; ++i){
+        a[new_lin][i] = in[index][i];
+    }
+}
+void generare_prim_tabel4(){
+    /// in cazul unei functii cu 4 variabile
+    /// se genereaza primul pas al minimizarii, punerea mintermilor in tabel in functie de grupa lor, in ordine
+    /// pe pozitia 0 va fi numarul convertit din binar in zecimal
+    /// pe pozitiile 1 2 3 4 va fi scrierea binara
+    /// pe pozitia 5 se va bifa mintermul dupa pasul urmator
+
+    int cnt = 0, count_grupa = 0, indice_grupa = 0, index_new_lin = 0;
+    bool use[16] = {0};
+    while((cnt != 16)){
+        for(int i = 0; i < 16; ++i){
+            if((grupa[in[i][0]] == indice_grupa) && !use[in[i][0]]){
+                if (in[i][5]){
+                    copiere(index_new_lin, i);
+                    index_new_lin++;
+                }
+                use[in[i][0]] = true;
+                cnt++; count_grupa++;
+                if(count_grupa == 1 && indice_grupa == 0) count_grupa = 0, indice_grupa++;
+                else if(count_grupa == 4 && indice_grupa == 1) {count_grupa = 0, indice_grupa++; break;}
+                else if(count_grupa == 6 && indice_grupa == 2) {count_grupa = 0, indice_grupa++; break;}
+                else if(count_grupa == 4 && indice_grupa == 3) {count_grupa = 0, indice_grupa++; break;}
+                else if(count_grupa == 1 && indice_grupa == 4) {indice_grupa++; break;}
+            }
+        }
+    }
+    m = index_new_lin;
+}
+void generare_prim_tabel5(){
+    /// in cazul unei functii cu 5 variabile
+    /// se genereaza primul pas al minimizarii, punerea mintermilor in tabel in functie de grupa lor, in ordine
+    /// pe pozitia 0 va fi numarul convertit din binar in zecimal
+    /// pe pozitiile 1 2 3 4 5 va fi scrierea binara
+    /// pe pozitia 6 se va bifa mintermul dupa pasul urmator
+
+    int cnt = 0, count_grupa = 0, indice_grupa = 0, index_new_lin = 0;
+    bool use[32] = {0};
+    while((cnt != 32)){
+        for(int i = 0; i < 32; ++i){
+            if((grupa[in[i][0]] == indice_grupa) && !use[in[i][0]]){
+                if (in[i][6]){
+                    copiere(index_new_lin, i);
+                    index_new_lin++;
+                }
+                use[in[i][0]] = true;
+                cnt++; count_grupa++;
+                if(count_grupa == 1 && indice_grupa == 0) {count_grupa = 0, indice_grupa++; break;}
+                else if(count_grupa == 5 && indice_grupa == 1) {count_grupa = 0, indice_grupa++; break;}
+                else if(count_grupa == 10 && indice_grupa == 2) {count_grupa = 0, indice_grupa++; break;}
+                else if(count_grupa == 10 && indice_grupa == 3) {count_grupa = 0, indice_grupa++; break;}
+                else if(count_grupa == 5 && indice_grupa == 4) {count_grupa = 0, indice_grupa++; break;}
+                else if(count_grupa == 1 && indice_grupa == 5) {indice_grupa++; break;}
+            }
+        }
+    }
+    m = index_new_lin;
+}
+void generare_al_doilea_tabel4(){
+    /// in cazul unei functii de 4 variabile
+    /// intr-o matrice noua se vor face perechile de mintermi adiacenti
+    /// matricea va avea pe pozitiile 0 1 2 3 ale fiecarei linii 0, 1 sau -1 (care este corespondentul liniutei) in functie de
+            ///combinatia binara a mintermilor
+    /// pe pozitia 4 se va bifa linia dupa urmatorul pas
+    /// in paralel cu matricea, se genereaza si o lista care va retine mintermii corespunzatori unei linii
+    /// in momentul in care se gaseste o pereche de mintermi adiacenti, acestia vor fi bifati in matricea anterioara
+    /// la finalul functiei, se afiseaza noul tabel care contine perechile de mintermi adiacenti si combinatia lor binara
+
+    int diferente = 0, pozdif, i, j, k;
+    for( i = 0; i < m; ++i)
+        for( j = i + 1; j < m; ++j){
+            if(grupa[a[i][0]] == grupa[a[j][0]]) continue; /// se verifica daca mintermii indeplinesc conditia de a avea grupe consecutive
+            if(grupa[a[i][0]] < grupa[a[j][0]] - 1) break;
+            diferente = 0; /// se numara diferentele vectorilor pentru a vedea daca sunt adiacenti
+            for( k = 1; k < 5; ++k)
+                if (a[i][k] != a[j][k]){ pozdif = k - 1; diferente++; }
+            if(diferente == 1){
+                nr_linb++; /// in caz de adiacenta, se copiaza combinatia binara in noua matrice si se introduc mintermii in lista
+                mintermi[nr_linb].push_back(a[i][0]);
+                mintermi[nr_linb].push_back(a[j][0]);
+                for( k = 0; k < 4; ++k){
+                    if(k == pozdif) b[nr_linb][k] = -1;
+                    else b[nr_linb][k] = a[i][k + 1];
+                }
+                a[i][5] = a[j][5] = 5; /// se bifeaza mintermii folositi in tabelul anterior
+            }
+        }
+    cout << '\n'; /// afisarea tabelului
+    cout << "Primul pas" << '\n' << "Mintermi -> a b c d" << '\n';
+    for(int i = 0; i <= nr_linb; ++i){
+        for(int j = 0; j < (int)mintermi[i].size(); ++j)
+           cout << mintermi[i][j] << " ";
+        cout << " ->  ";
+        if(b[i][0] == -1) cout << "- "; else cout << b[i][0] << " ";
+        if(b[i][1] == -1) cout << "- "; else cout << b[i][1] << " ";
+        if(b[i][2] == -1) cout << "- "; else cout << b[i][2] << " ";
+        if(b[i][3] == -1) cout << "- " << '\n'; else cout << b[i][3] << " " << '\n';
+    }
+}
+void generare_al_doilea_tabel5(){
+    /// in cazul unei functii de 5 variabile
+    /// intr-o matrice noua se vor face perechile de mintermi adiacenti
+    /// matricea va avea pe pozitiile 0 1 2 3 4 ale fiecarei linii 0, 1 sau -1 (care este corespondentul liniutei) in functie de
+            ///combinatia binara a mintermilor
+    /// pe pozitia 5 se va bifa linia dupa urmatorul pas
+    /// in paralel cu matricea, se genereaza si o lista care va retine mintermii corespunzatori unei linii
+    /// in momentul in care se gaseste o pereche de mintermi adiacenti, acestia vor fi bifati in matricea anterioara
+    /// la finalul functiei, se afiseaza noul tabel care contine perechile de mintermi adiacenti si combinatia lor binara
+
+    int diferente = 0, pozdif, i, j, k;
+    for( i = 0; i < m; ++i)
+        for( j = i + 1; j < m; ++j){
+            if(grupa[a[i][0]] == grupa[a[j][0]]) continue; /// se verifica daca mintermii indeplinesc conditia de a avea grupe consecutive
+            if(grupa[a[i][0]] < grupa[a[j][0]] - 1) break;
+            diferente = 0; /// se numara diferentele vectorilor pentru a vedea daca sunt adiacenti
+            for( k = 1; k < 6; ++k)
+                if (a[i][k] != a[j][k]){ pozdif = k - 1; diferente++; }
+            if(diferente == 1){
+                nr_linb++; /// in caz de adiacenta, se copiaza combinatia binara in noua matrice si se introduc mintermii in lista
+                mintermi[nr_linb].push_back(a[i][0]);
+                mintermi[nr_linb].push_back(a[j][0]);
+                for( k = 0; k < 5; ++k){
+                    if(k == pozdif) b[nr_linb][k] = -1;
+                    else b[nr_linb][k] = a[i][k + 1];
+                }
+                a[i][6] = a[j][6] = 5; /// se bifeaza mintermii folositi in tabelul anterior
+            }
+        }
+    cout << '\n'; /// afisarea tabelului
+    cout << "Primul pas" << '\n' << "Mintermi -> a b c d" << '\n';
+    for(int i = 0; i <= nr_linb; ++i){
+        for(int j = 0; j < (int)mintermi[i].size(); ++j)
+           cout << mintermi[i][j] << " ";
+        cout << " ->  ";
+        if(b[i][0] == -1) cout << "- "; else cout << b[i][0] << " ";
+        if(b[i][1] == -1) cout << "- "; else cout << b[i][1] << " ";
+        if(b[i][2] == -1) cout << "- "; else cout << b[i][2] << " ";
+        if(b[i][3] == -1) cout << "- "; else cout << b[i][3] << " ";
+        if(b[i][4] == -1) cout << "- " << '\n'; else cout << b[i][4] << " " << '\n';
+    }
+}
+void generare_al_treilea_tabel4(){
+    /// in cazul unei functii de 4 variabile
+    /// se va crea al treilea tabel care verifica adiacenta perechilor deja create la pasul anterior si lista cu mintermii din perechea de 4 mintermi
+    /// matricea noua va avea pe pozitiile 0 1 2 3 ale fiecarei linii valorile 0, 1 respectiv -1
+    /// in paralel cu matricea, se genereaza si o lista care va retine mintermii corespunzatori unei linii
+    /// in momentul in care se gaseste o pereche de mintermi adiacenti, acestia vor fi bifati in matricea anterioara
+    /// la finalul functiei, se afiseaza noul tabel care contine perechile de 4 mintermi adiacenti si combinatia lor binara
+
+    int diferente = 0, pozdif;
+    for(int i = 0; i <= nr_linb; ++i)
+        for(int j = i + 1; j <= nr_linb; ++j){
+            if(grupa[mintermi[i][0]] == grupa[mintermi[j][0]]) continue; /// se verifica daca mintermii sunt din grupe consecutive
+            if(grupa[mintermi[i][0]] < grupa[mintermi[j][0]] - 1) break;
+            diferente = 0; /// se numara diferentele vectorilor pentru a stabili adiacenta
+            for(int k = 0; k < 4; ++k)
+                if (b[i][k] != b[j][k]) { pozdif = k; diferente++; }
+            if(diferente == 1){
+                nr_linc++; /// in caz de adiacenta se scrie in noul tabel perechea binara de 4 mintermi si se adauga in lista mintermii
+                for(int k = 0; k < (int)mintermi[i].size(); ++k)
+                    mintermic[nr_linc].push_back(mintermi[i][k]);
+                for(int k = 0; k < (int)mintermi[j].size(); ++k)
+                    mintermic[nr_linc].push_back(mintermi[j][k]);
+                for(int k = 0; k < 4; ++k){
+                    if(k == pozdif) c[nr_linc][k] = -1;
+                    else c[nr_linc][k] = b[i][k];
+                }
+                b[i][4] = b[j][4] = 5; /// se bifeaza in tabelul anterior mintermii folositi
+            }
+        }
+    cout << '\n'; /// se ordoneaza mintermii din lista in mod crescator si se afiseaza o singura data
+    cout << "Al doilea pas" << '\n' << "Mintermi -> a b c d" << '\n';
+    int ok = 0;
+    for(int i = 0; i <= nr_linc; i += 1)
+        sort(mintermic[i].begin(), mintermic[i].begin() + (int)mintermic[i].size());
+    for(int i = 0; i <= nr_linc; i += 1){
+        for(int j = i + 1; j <= nr_linc; ++j){
+            ok = 0;
+            for(int b = 0; b < (int)mintermic[i].size(); ++b){
+                if(mintermic[i][b] != mintermic[j][b])
+                    ok = 1;
+            }
+            if(!ok){
+                mintermic[j][0] = -15; /// combinatiile de mintermi care se repeta este marcata pentru a putea fi ignorata
+                continue;
+            }
+        }
+    }
+    for(int i = 0; i <= nr_linc; i += 1){ /// afisarea tabelului
+        if(mintermic[i][0] != -15){
+            for(int j = 0; j < (int)mintermic[i].size(); ++j)
+               cout << mintermic[i][j] << " ";
+            cout << " ->  ";
+            if(c[i][0] == -1) cout << "- "; else cout << c[i][0] << " ";
+            if(c[i][1] == -1) cout << "- "; else cout << c[i][1] << " ";
+            if(c[i][2] == -1) cout << "- "; else cout << c[i][2] << " ";
+            if(c[i][3] == -1) cout << "- " << '\n'; else cout << c[i][3] << " " << '\n';
+        }
+    }
+}
+void generare_al_treilea_tabel5(){
+    /// in cazul unei functii de 5 variabile
+    /// se va crea al treilea tabel care verifica adiacenta perechilor deja create la pasul anterior si lista cu mintermii din perechea de 4 mintermi
+    /// matricea noua va avea pe pozitiile 0 1 2 3 4 ale fiecarei linii valorile 0, 1 respectiv -1
+    /// in paralel cu matricea, se genereaza si o lista care va retine mintermii corespunzatori unei linii
+    /// in momentul in care se gaseste o pereche de mintermi adiacenti, acestia vor fi bifati in matricea anterioara
+    /// la finalul functiei, se afiseaza noul tabel care contine perechile de 4 mintermi adiacenti si combinatia lor binara
+
+    int diferente = 0, pozdif;
+    for(int i = 0; i <= nr_linb; ++i)
+        for(int j = i + 1; j <= nr_linb; ++j){
+            if(grupa[mintermi[i][0]] == grupa[mintermi[j][0]]) continue; /// se verifica daca mintermii sunt din grupe consecutive
+            if(grupa[mintermi[i][0]] < grupa[mintermi[j][0]] - 1) break;
+            diferente = 0; /// se numara diferentele vectorilor pentru a stabili adiacenta
+            for(int k = 0; k < 5; ++k)
+                if (b[i][k] != b[j][k]) { pozdif = k; diferente++; }
+            if(diferente == 1){
+                nr_linc++; /// in caz de adiacenta se scrie in noul tabel perechea binara de 4 mintermi si se adauga in lista mintermii
+                for(int k = 0; k < (int)mintermi[i].size(); ++k)
+                    mintermic[nr_linc].push_back(mintermi[i][k]);
+                for(int k = 0; k < (int)mintermi[j].size(); ++k)
+                    mintermic[nr_linc].push_back(mintermi[j][k]);
+                for(int k = 0; k < 5; ++k){
+                    if(k == pozdif) c[nr_linc][k] = -1;
+                    else c[nr_linc][k] = b[i][k];
+                }
+                b[i][5] = b[j][5] = 5; /// se bifeaza in tabelul anterior mintermii folositi
+            }
+        }
+    cout << '\n'; /// se ordoneaza mintermii din lista in mod crescator si se afiseaza o singura data
+    cout << "Al doilea pas" <<'\n' << "Mintermi -> a b c d" << '\n';
+    int ok = 0;
+    for(int i = 0; i <= nr_linc; i += 1)
+        sort(mintermic[i].begin(), mintermic[i].begin() + (int)mintermic[i].size());
+    for(int i = 0; i <= nr_linc; i += 1){
+        for(int j = i + 1; j <= nr_linc; ++j){
+            ok = 0;
+            for(int b = 0; b < (int)mintermic[i].size(); ++b){
+                if(mintermic[i][b] != mintermic[j][b])
+                    ok = 1;
+            }
+            if(!ok){
+                mintermic[j][0] = -15; /// combinatiile de mintermi care se repeta este marcata pentru a putea fi ignorata
+                continue;
+            }
+        }
+    }
+    for(int i = 0; i <= nr_linc; i += 1){ /// afisarea tabelului
+        if(mintermic[i][0] != -15){
+            for(int j = 0; j < (int)mintermic[i].size(); ++j)
+                cout << mintermic[i][j] << " ";
+            cout << " ->  ";
+            if(c[i][0] == -1) cout << "- "; else cout << c[i][0] << " ";
+            if(c[i][1] == -1) cout << "- "; else cout << c[i][1] << " ";
+            if(c[i][2] == -1) cout << "- "; else cout << c[i][2] << " ";
+            if(c[i][3] == -1) cout << "- "; else cout << c[i][4] << " ";
+            if(c[i][4] == -1) cout << "- " << '\n'; else cout << c[i][4] << " " << '\n';
+        }
+    }
+}
+void generare_al_patrulea_tabel4_sol(){
+    /// in cazul unei functii de 4 variabile
+    /// se va crea al patrulea tabel care va fi folosit pentru scrierea finala a functiei minimizate
+    /// matricea noua va avea pe pozitiile 0 1 2 3 ale fiecarei linii valorile 0, 1 respectiv -1
+    /// in paralel cu matricea, se genereaza si o lista care va retine mintermii corespunzatori unei linii
+    /// in aceasta matrice se vor adauga mintermii nebifati din toate tabelele anterioare
+    /// la finalul functiei, se afiseaza noul tabel care contine perechile de mintermi in varianta lor cea mai simplificata
+
+    cout << '\n' <<'\n' << "Tabelul final cu implicanti primi si mintermii corespunzatori: " << '\n' << '\n';
+    for(int i = 0; i < m; ++i){ /// se parcurge primul tabel pentru a extrage mintermii nebifati
+        if(a[i][5] != 5){
+            nr_linsol++;
+            mintermisol[nr_linsol].push_back(a[i][0]);
+            for(int k = 1; k < 5; ++k)
+                sol[nr_linsol][k - 1] = a[i][k];
+        }
+    }
+    for(int i = 0; i <= nr_linb; ++i){ /// se parcurge al doilea tabel pentru a extrage mintermii nebifati
+        if(b[i][4] != 5){
+            nr_linsol++;
+            for(int k = 0; k < (int)mintermi[i].size(); ++k)
+                mintermisol[nr_linsol].push_back(mintermi[i][k]);
+            for(int k = 0; k < 4; ++k)
+                sol[nr_linsol][k] = b[i][k];
+        }
+    }
+    for(int i = 0; i <= nr_linc; ++i){ /// se parcurge al treilea tabel pentru a extrage mintermii o singura data
+        if(mintermic[i][0] != -15){
+            nr_linsol++;
+            for(int k = 0; k < (int)mintermic[i].size(); ++k)
+                mintermisol[nr_linsol].push_back(mintermic[i][k]);
+            for(int k = 0; k < 4; ++k)
+                sol[nr_linsol][k] = c[i][k];
+        }
+    }
+    for(int i = 0; i <= nr_linsol; cout << "\n", ++i){ /// afisarea tabelului final
+        for(int j = 0; j < (int)mintermisol[i].size(); ++j)
+            cout << mintermisol[i][j] << " ";
+        cout << " ->  ";
+        if(sol[i][0] == -1) cout << "- "; else cout << sol[i][0] << " ";
+        if(sol[i][1] == -1) cout << "- "; else cout << sol[i][1] << " ";
+        if(sol[i][2] == -1) cout << "- "; else cout << sol[i][2] << " ";
+        if(sol[i][3] == -1) cout << "- "; else cout << sol[i][3] << " ";
+    }
+    cout << '\n' << '\n' << "Mintermii acoperiti de implicanti" << '\n' << '\n';
+    int use[100] = {0};
+    for(int i = 0; i < 100; ++i){
+        use[a[i][0]] = 1;
+    }
+    for(int i = 0; i < m; ++i){
+        if (use[i]) cout << i << " ";
+    }
+    cout << '\n';
+    int use1[100] = {0};
+    for(int i = 0; i <= nr_linsol; cout << "\n", ++i){
+        for(int j = 0; j < (int)mintermisol[i].size(); ++j){
+            use1[mintermisol[i][j]] = 1;
+        }
+        for(int j = 0; j < m; ++j){
+            if(use1[j] && j < 10 && use[j]) cout << "X ";
+            else if(use1[j] && j >= 10 && use[j]) cout << " X ";
+            else if(j >= 10 && use[j]) cout << "   ";
+            else if(use[j]) cout << "  ";
+        }
+        for(int j = 0; j < 100; ++j){
+            use1[j] = 0;
+        }
+
+    }
+}
+void generare_al_patrulea_tabel5_sol(){
+    /// in cazul unei functii de 5 variabile
+    /// se va crea al patrulea tabel care va fi folosit pentru scrierea finala a functiei minimizate
+    /// matricea noua va avea pe pozitiile 0 1 2 3 4 ale fiecarei linii valorile 0, 1 respectiv -1
+    /// in paralel cu matricea, se genereaza si o lista care va retine mintermii corespunzatori unei linii
+    /// in aceasta matrice se vor adauga mintermii nebifati din toate tabelele anterioare
+    /// la finalul functiei, se afiseaza noul tabel care contine perechile de mintermi in varianta lor cea mai simplificata
+
+    cout << '\n' <<'\n' << "Tabelul final cu implicanti primi si mintermii corespunzatori: " << '\n' << '\n';
+    for(int i = 0; i < m; ++i){ /// se parcurge primul tabel pentru a extrage mintermii nebifati
+        if(a[i][6] != 5){
+            nr_linsol++;
+            mintermisol[nr_linsol].push_back(a[i][0]);
+            for(int k = 1; k < 6; ++k)
+                sol[nr_linsol][k - 1] = a[i][k];
+        }
+    }
+    for(int i = 0; i <= nr_linb; ++i){ /// se parcurge al doilea tabel pentru a extrage mintermii nebifati
+        if(b[i][5] != 5){
+            nr_linsol++;
+            for(int k = 0; k < (int)mintermi[i].size(); ++k)
+                mintermisol[nr_linsol].push_back(mintermi[i][k]);
+            for(int k = 0; k < 5; ++k)
+                sol[nr_linsol][k] = b[i][k];
+        }
+    }
+    for(int i = 0; i <= nr_linc; ++i){ /// se parcurge al treilea tabel pentru a extrage mintermii o singura data
+        if(mintermic[i][0] != -15){
+            nr_linsol++;
+            for(int k = 0; k < (int)mintermic[i].size(); ++k)
+                mintermisol[nr_linsol].push_back(mintermic[i][k]);
+            for(int k = 0; k < 5; ++k)
+                sol[nr_linsol][k] = c[i][k];
+        }
+    }
+    for(int i = 0; i <= nr_linsol; cout << "\n", ++i){ /// afisarea tabelului final
+        for(int j = 0; j < (int)mintermisol[i].size(); ++j)
+            cout << mintermisol[i][j] << " ";
+        cout << " ->  ";
+        if(sol[i][0] == -1) cout << "- "; else cout << sol[i][0] << " ";
+        if(sol[i][1] == -1) cout << "- "; else cout << sol[i][1] << " ";
+        if(sol[i][2] == -1) cout << "- "; else cout << sol[i][2] << " ";
+        if(sol[i][3] == -1) cout << "- "; else cout << sol[i][3] << " ";
+        if(sol[i][4] == -1) cout << "- "; else cout << sol[i][4] << " ";
+    }
+    cout << '\n' << '\n' << "Mintermii acoperiti de implicanti" << '\n' << '\n';
+    int use[100] = {0};
+    for(int i = 0; i < m; ++i){
+        use[a[i][0]] = 1;
+    }
+    for(int i = 0; i < 100; ++i){
+        if (use[i]) cout << i << " ";
+    }
+    cout << '\n';
+    int use1[100] = {0};
+    for(int i = 0; i <= nr_linsol; cout << "\n", ++i){
+        for(int j = 0; j < (int)mintermisol[i].size(); ++j){
+            use1[mintermisol[i][j]] = 1;
+        }
+        for(int j = 0; j < m; ++j){
+            if(use1[j] && j < 10 && use[j]) cout << "X ";
+            else if(use1[j] && j >= 10 && use[j]) cout << " X ";
+            else if(j >= 10 && use[j]) cout << "   ";
+            else if(use[j]) cout << "  ";
+        }
+        for(int j = 0; j < 100; ++j){
+            use1[j] = 0;
+        }
+
+    }
+}
+vector <int> v;
+void functie4(){
+    /// in cazul unei functii de 4 variabile
+    /// se va folosi un vector care va retine mintermii acoperiti de implicantii care vor fi folositi in descrierea functiei si afisati
+    /// un alt vector va retine numarul de aparitii al unui minterm din toti implicantii
+    /// in alti 2 vectori se va retine numarul mintermilor fiecarul implicant, respectiv cati dintre acestia au fost acoperiti
+            /// de o afisare anterioara a altui implicant
+    /// se vor salva implicantii primi esentiali si apoi se va verifica daca mai sunt mintermi ne acoperiti
+    /// in cazul in care mai sunt mintermi neacoperiti, se aleg cei mai buni implicanti care sa ii contina
+    /// se afiseaza funtia finala care este minimizata
+
+    int used[16] = {0}, index[16] = {0}, printed[16] = {0}, ok = 0, x = 30;
+    int cntok = 0, nrelem[nr_linsol + 1] = {0}, nrusedelem[nr_linsol + 1] = {0};
+    int dif = 0, poz;
+    for(int i = 0; i <= nr_linsol; ++i) /// se numara aparitiile mintermilor din toti implicantii
+        for(int j = 0; j < (int)mintermisol[i].size(); ++j){
+            used[mintermisol[i][j]]++;
+            index[mintermisol[i][j]] = i;
+        }
+    for(int i = 0; i < 16; ++i)
+        if (used[i] == 1){ /// in cazul in care un minterm apare o singura data, implicantul esential caruia ii apartine este salvat pentru afisare
+            v.push_back(index[i]);
+            for(int j = 0; j < (int)mintermisol[index[i]].size(); ++j){
+                printed[mintermisol[index[i]][j]] = 1; /// se bifeaza ca fiind acoperiti toti mintermii implicantului esential
+            }
+        }
+    for(int i = 0; i <= nr_linsol; ++i){ /// se numara cati mintermi are fiecare implicant si cati dintre ei au fost acoperiti de cei esentiali
+        nrelem[i] = mintermisol[i].size();
+        for(int j = 0; j < (int)mintermisol[i].size(); ++j){
+            if(printed[mintermisol[i][j]])
+                nrusedelem[i]++;
+        }
+    }
+    for(int i = 0; i < 16; ++i)
+        if(printed[i]) cntok++;
+    if(cntok != m)
+    while(!ok && x--){
+        dif = 0; poz = -1;
+        for(int i = 0; i <= nr_linsol; ++i){ /// se gaseste implicantul care are cel mai mic numar de mintermi acoperiti
+            if (nrelem[i] - nrusedelem[i] > dif) poz = i, dif = nrelem[i] - nrusedelem[i];
+        }
+        if (poz == -1) break;
+        v.push_back(poz); /// se retine implicantul cel mai bun si se actualizeaza vectorul cu mintermi acoperiti
+        nrusedelem[poz] = nrelem[poz];
+        for(int j = 0; j < (int)mintermisol[poz].size(); ++j){
+            printed[mintermisol[poz][j]] = 1;
+            for(int a = 0; a <= nr_linsol; ++a){
+                nrusedelem[a] = 0;
+                for(int b = 0; b < (int)mintermisol[a].size(); ++b){
+                    if(printed[mintermisol[a][b]]){
+                        nrusedelem[a]++;
+                    }
+                }
+            }
+        }
+        cntok = 0; /// in momentul in care toti mintermii sunt acoperiti se poate afisa functia minimizata
+        for(int i = 0; i < 16; ++i)
+            if(printed[i]) cntok++;
+        if(cntok == m) ok = 1;
+    }
+    cout << '\n' << '\n' << "functia f = "; /// afisarea functiei minimizare
+    for(int i = 0; i < (int)v.size(); ++i){ /// in functie de valorile binare din tabel se afiseaza literele a b c sau d
+        for(int j = 0; j < 4; ++j){
+            switch(sol[v[i]][j]){
+                case 0:{
+                    switch(j){
+                        case 0: cout << "a'"; break;
+                        case 1: cout << "b'"; break;
+                        case 2: cout << "c'"; break;
+                        case 3: cout << "d'"; break;
+                    } break;
+                }
+                case 1:{
+                    switch(j){
+                        case 0: cout << "a"; break;
+                        case 1: cout << "b"; break;
+                        case 2: cout << "c"; break;
+                        case 3: cout << "d"; break;
+                    } break;
+                }
+            }
+        }
+        cout << " + ";
+    }
+    cout << '\b' << '\b' << " " << '\n' << '\n';
+}
+void functie5(){
+    /// in cazul unei functii de 5 variabile
+    /// se va folosi un vector care va retine mintermii acoperiti de implicantii care vor fi folositi in descrierea functiei si afisati
+    /// un alt vector va retine numarul de aparitii al unui minterm din toti implicantii
+    /// in alti 2 vectori se va retine numarul mintermilor fiecarul implicant, respectiv cati dintre acestia au fost acoperiti
+            /// de o afisare anterioara a altui implicant
+    /// se vor salva implicantii primi esentiali si apoi se va verifica daca mai sunt mintermi ne acoperiti
+    /// in cazul in care mai sunt mintermi neacoperiti, se aleg cei mai buni implicanti care sa ii contina
+    /// se afiseaza funtia finala care este minimizata
+
+    int used[32] = {0}, index[32] = {0}, printed[32] = {0}, ok = 0, x = 60;
+    int cntok = 0, nrelem[nr_linsol + 1] = {0}, nrusedelem[nr_linsol + 1] = {0};
+    int dif = 0, poz;
+    for(int i = 0; i <= nr_linsol; ++i) /// se numara aparitiile mintermilor din toti implicantii
+        for(int j = 0; j < (int)mintermisol[i].size(); ++j){
+            used[mintermisol[i][j]]++;
+            index[mintermisol[i][j]] = i;
+        }
+    for(int i = 0; i < 32; ++i)
+        if (used[i] == 1){ /// in cazul in care un minterm apare o singura data, implicantul esential caruia ii apartine este salvat pentru afisare
+            v.push_back(index[i]);
+            for(int j = 0; j < (int)mintermisol[index[i]].size(); ++j){
+                printed[mintermisol[index[i]][j]] = 1; /// se bifeaza ca fiind acoperiti toti mintermii implicantului esential
+            }
+        }
+    for(int i = 0; i <= nr_linsol; ++i){ /// se numara cati mintermi are fiecare implicant si cati dintre ei au fost acoperiti de cei esentiali
+        nrelem[i] = mintermisol[i].size();
+        for(int j = 0; j < (int)mintermisol[i].size(); ++j){
+            if(printed[mintermisol[i][j]])
+                nrusedelem[i]++;
+        }
+    }
+    for(int i = 0; i < 32; ++i)
+        if(printed[i]) cntok++;
+    if(cntok != m)
+    while(!ok && x--){
+        dif = 0; poz = -1;
+        for(int i = 0; i <= nr_linsol; ++i){ /// se gaseste implicantul care are cel mai mic numar de mintermi acoperiti
+            if (nrelem[i] - nrusedelem[i] > dif) poz = i, dif = nrelem[i] - nrusedelem[i];
+        }
+        if (poz == -1) break;
+        v.push_back(poz); /// se retine implicantul cel mai bun si se actualizeaza vectorul cu mintermi acoperiti
+        nrusedelem[poz] = nrelem[poz];
+        for(int j = 0; j < (int)mintermisol[poz].size(); ++j){
+            printed[mintermisol[poz][j]] = 1;
+            for(int a = 0; a <= nr_linsol; ++a){
+                nrusedelem[a] = 0;
+                for(int b = 0; b < (int)mintermisol[a].size(); ++b){
+                    if(printed[mintermisol[a][b]]){
+                        nrusedelem[a]++;
+                    }
+                }
+            }
+        }
+        cntok = 0; /// in momentul in care toti mintermii sunt acoperiti se poate afisa functia minimizata
+        for(int i = 0; i < 32; ++i)
+            if(printed[i]) cntok++;
+        if(cntok == m) ok = 1;
+    }
+    cout << '\n' << '\n' << "functia f = "; /// afisarea functiei minimizare
+    for(int i = 0; i < (int)v.size(); ++i){ /// in functie de valorile binare din tabel se afiseaza literele a b c d sau e
+        for(int j = 0; j < 5; ++j){
+            switch(sol[v[i]][j]){
+                case 0:{
+                    switch(j){
+                        case 0: cout << "a'"; break;
+                        case 1: cout << "b'"; break;
+                        case 2: cout << "c'"; break;
+                        case 3: cout << "d'"; break;
+                        case 4: cout << "e'"; break;
+                    } break;
+                }
+                case 1:{
+                    switch(j){
+                        case 0: cout << "a"; break;
+                        case 1: cout << "b"; break;
+                        case 2: cout << "c"; break;
+                        case 3: cout << "d"; break;
+                        case 4: cout << "e"; break;
+                    } break;
+                }
+            }
+        }
+        cout << " + ";
+    }
+    cout << '\b' << '\b' << " " << '\n' << '\n';
+}
+void afisare_prim_tabel4(){
+    cout << " " << '\n';
+    cout << "Tabelul de valori introduse este:" << '\n' << "Minterm -> a b c d" << '\n';
+    for (int i = 0; i < m; cout << '\n', ++i){
+        cout << a[i][0] << "  ->  ";
+        for (int j = 1; j < 5; ++j)
+            cout << a[i][j] << " " ;
+    }
+}
+void afisare_prim_tabel5(){
+    cout << " " << '\n';
+    cout << "Tabelul de valori introduse este:" << '\n' << "Minterm -> a b c d" << '\n';
+    for (int i = 0; i < m; cout << '\n', ++i){
+        for (int j = 0; j < 6; ++j)
+            cout << a[i][j] << " " ;
+    }
+}
+
+int main(){
+    ///cout << '\n' << "introduceti numarul de variabile (4 sau 5) : ";
+    fin >> n;
+    ///cout << "introduceti tabelul de adevar: " << '\n' << '\n';
+    switch(n){ /// se vor trata separat cazurile unei functii cu 4 variabile sau cu 5 variabile
+        case 4:{
+            init4(); citire4();
+            generare_prim_tabel4(); afisare_prim_tabel4();
+            generare_al_doilea_tabel4();
+            generare_al_treilea_tabel4();
+            generare_al_patrulea_tabel4_sol();
+            functie4();
+            break;
+        }
+        case 5:{
+            init5(); citire5();
+            generare_prim_tabel5(); afisare_prim_tabel5();
+            generare_al_doilea_tabel5();
+            generare_al_treilea_tabel5();
+            generare_al_patrulea_tabel5_sol();
+            functie5();
+            break;
+        }
+    } /// mai jos sunt cateva tabele de adevar ale unor functii
+    return 0;
+}
+
+
+
+/*
+4
+
+0 0 0 0 0
+0 0 0 1 0
+0 0 1 0 0
+0 0 1 1 0
+0 1 0 0 0
+0 1 0 1 0
+0 1 1 0 0
+0 1 1 1 1
+1 0 0 0 0
+1 0 0 1 0
+1 0 1 0 0
+1 0 1 1 1
+1 1 0 0 0
+1 1 0 1 1
+1 1 1 0 1
+1 1 1 1 1
+
+a
+0 0 0 0 1
+0 0 0 1 0
+0 0 1 0 1
+0 0 1 1 1
+0 1 0 0 0
+0 1 0 1 1
+0 1 1 0 1
+0 1 1 1 1
+1 0 0 0 1
+1 0 0 1 1
+1 0 1 0 1
+1 0 1 1 0
+1 1 0 0 1
+1 1 0 1 0
+1 1 1 0 1
+1 1 1 1 1
+
+b
+0 0 0 0 1
+0 0 0 1 1
+0 0 1 0 1
+0 0 1 1 1
+0 1 0 0 1
+0 1 0 1 0
+0 1 1 0 0
+0 1 1 1 1
+1 0 0 0 1
+1 0 0 1 1
+1 0 1 0 1
+1 0 1 1 0
+1 1 0 0 0
+1 1 0 1 1
+1 1 1 0 0
+1 1 1 1 0
+
+c
+0 0 0 0 1
+0 0 0 1 1
+0 0 1 0 0
+0 0 1 1 1
+0 1 0 0 1
+0 1 0 1 1
+0 1 1 0 1
+0 1 1 1 1
+1 0 0 0 1
+1 0 0 1 1
+1 0 1 0 1
+1 0 1 1 1
+1 1 0 0 0
+1 1 0 1 1
+1 1 1 0 0
+1 1 1 1 0
+
+d
+0 0 0 0 1
+0 0 0 1 0
+0 0 1 0 1
+0 0 1 1 1
+0 1 0 0 0
+0 1 0 1 1
+0 1 1 0 1
+0 1 1 1 0
+1 0 0 0 1
+1 0 0 1 1
+1 0 1 0 0
+1 0 1 1 1
+1 1 0 0 1
+1 1 0 1 1
+1 1 1 0 1
+1 1 1 1 0
+
+e
+0 0 0 0 1
+0 0 0 1 0
+0 0 1 0 1
+0 0 1 1 0
+0 1 0 0 0
+0 1 0 1 0
+0 1 1 0 1
+0 1 1 1 0
+1 0 0 0 1
+1 0 0 1 0
+1 0 1 0 1
+1 0 1 1 1
+1 1 0 0 1
+1 1 0 1 1
+1 1 1 0 1
+1 1 1 1 1
+
+f
+0 0 0 0 1
+0 0 0 1 0
+0 0 1 0 0
+0 0 1 1 0
+0 1 0 0 1
+0 1 0 1 1
+0 1 1 0 1
+0 1 1 1 0
+1 0 0 0 1
+1 0 0 1 1
+1 0 1 0 1
+1 0 1 1 1
+1 1 0 0 1
+1 1 0 1 0
+1 1 1 0 1
+1 1 1 1 1
+
+g
+0 0 0 0 0
+0 0 0 1 0
+0 0 1 0 1
+0 0 1 1 1
+0 1 0 0 1
+0 1 0 1 1
+0 1 1 0 1
+0 1 1 1 0
+1 0 0 0 1
+1 0 0 1 1
+1 0 1 0 1
+1 0 1 1 1
+1 1 0 0 0
+1 1 0 1 1
+1 1 1 0 1
+1 1 1 1 1
+
+0 0 0 0 0
+0 0 0 1 0
+0 0 1 0 1
+0 0 1 1 1
+0 1 0 0 1
+0 1 0 1 1
+0 1 1 0 0
+0 1 1 1 0
+1 0 0 0 0
+1 0 0 1 0
+1 0 1 0 1
+1 0 1 1 1
+1 1 0 0 1
+1 1 0 1 1
+1 1 1 0 0
+1 1 1 1 0
+
+*/
+
+/*
+5
+
+0 0 0 0 0 0
+0 0 0 0 1 0
+0 0 0 1 0 0
+0 0 0 1 1 0
+0 0 1 0 0 0
+0 0 1 0 1 0
+0 0 1 1 0 0
+0 0 1 1 1 1
+0 1 0 0 0 0
+0 1 0 0 1 0
+0 1 0 1 0 0
+0 1 0 1 1 1
+0 1 1 0 0 0
+0 1 1 0 1 1
+0 1 1 1 0 1
+0 1 1 1 1 1
+1 0 0 0 0 0
+1 0 0 0 1 0
+1 0 0 1 0 0
+1 0 0 1 1 1
+1 0 1 0 0 0
+1 0 1 0 1 1
+1 0 1 1 0 1
+1 0 1 1 1 1
+1 1 0 0 0 0
+1 1 0 0 1 1
+1 1 0 1 0 1
+1 1 0 1 1 1
+1 1 1 0 0 1
+1 1 1 0 1 1
+1 1 1 1 0 1
+1 1 1 1 1 1
+
+
+0 0 0 0 0 0
+0 0 0 0 1 1
+0 0 0 1 0 0
+0 0 0 1 1 1
+0 0 1 0 0 1
+0 0 1 0 1 1
+0 0 1 1 0 1
+0 0 1 1 1 0
+0 1 0 0 0 0
+0 1 0 0 1 1
+0 1 0 1 0 0
+0 1 0 1 1 0
+0 1 1 0 0 1
+0 1 1 0 1 1
+0 1 1 1 0 0
+0 1 1 1 1 1
+1 0 0 0 0 1
+1 0 0 0 1 1
+1 0 0 1 0 1
+1 0 0 1 1 1
+1 0 1 0 0 0
+1 0 1 0 1 0
+1 0 1 1 0 0
+1 0 1 1 1 0
+1 1 0 0 0 1
+1 1 0 0 1 0
+1 1 0 1 0 0
+1 1 0 1 1 1
+1 1 1 0 0 0
+1 1 1 0 1 1
+1 1 1 1 0 1
+1 1 1 1 1 1
+
+*/

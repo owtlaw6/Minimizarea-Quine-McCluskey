@@ -1,0 +1,12 @@
+# depslib dependency file v1.0
+1586021002 source:d:\facultate\an 1\sem 2\tp\mccluskey\main.cpp
+	<iostream>
+	<vector>
+	<algorithm>
+
+1588604738 source:d:\facultate\an 1\sem 2\ld\proiect\mccluskey\main.cpp
+	<iostream>
+	<fstream>
+	<vector>
+	<algorithm>
+
